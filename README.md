@@ -12,6 +12,14 @@ This is part of my home lab. See [building-secure-home-lab](https://github.com/a
 - `install_uf.yml` installs or upgrades the Splunk Universal Forwarder, sends to the Splunk server on port 9997, and monitors `/var/log/auth.log` (as `linux_secure`) and `/var/log/syslog` (as `syslog`) into the `linux` index.
 - A second run reports `changed=0`. The playbooks only change what is missing.
 
+<img width="1512" height="136" alt="First playbook run on a clean snapshot" src="https://github.com/user-attachments/assets/7ec5e2c5-14f0-454c-9c2c-f1e08548cf3e" />
+
+*First run against nix-client01 rolled back to its July snapshot. The old forwarder is stopped, upgraded, configured and started again.*
+
+<img width="1200" height="135" alt="Both log sources arriving in Splunk" src="https://github.com/user-attachments/assets/70ce241d-96f5-4eb2-9e1c-d73a1530ac55" />
+
+*Both log sources arriving in Splunk with the right sourcetypes, a few minutes after the run.*
+
 ## Setup
 
 | Machine | Role | IP |
