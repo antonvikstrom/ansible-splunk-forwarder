@@ -1,0 +1,27 @@
+---
+- name: Bootstrap the ansible user on a fresh machine
+  hosts: linux_clients
+  remote_user: nix-localadmin
+  become: true
+
+  vars_prompt:
+    - name: ansible_user_password
+      prompt: "Password for the new ansible user"
+      private: true
+      encrypt: sha512_crypt
+      confirm: true
+
+  tasks:
+    - name: Create the ansible user with sudo rights
+      ansible.builtin.user:
+        name: ansible
+        groups: sudo
+        append: true
+        shell: /bin/bash
+        password: "{{ ansible_user_password }}"
+        update_password: on_create
+
+    - name: Allow key login from ansible-ctl
+      ansible.posix.authorized_key:
+        user: ansible
+        key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"

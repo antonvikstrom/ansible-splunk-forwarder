@@ -1,0 +1,3 @@
+# Create the real file with:
+# ansible-vault create group_vars/linux_clients/vault.yml
+ansible_become_password: "CHANGE_ME"

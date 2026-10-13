@@ -1,0 +1,85 @@
+---
+- name: Install and configure Splunk Universal Forwarder
+  hosts: linux_clients
+  become: true
+  vars:
+    uf_package: splunkforwarder-10.6.0.5-86587d4e3b27-linux-amd64.deb
+    uf_home: /opt/splunkforwarder
+    splunk_server: 10.1.1.10
+    uf_index: linux
+
+  tasks:
+    - name: Copy UF package to client
+      ansible.builtin.copy:
+        src: "{{ uf_package }}"
+        dest: "/tmp/{{ uf_package }}"
+        mode: "0644"
+
+    - name: Check if the UF needs installing or upgrading
+      ansible.builtin.apt:
+        deb: "/tmp/{{ uf_package }}"
+      check_mode: true
+      register: uf_check
+
+    - name: Stop the forwarder before an upgrade
+      ansible.builtin.systemd:
+        name: SplunkForwarder
+        state: stopped
+      when: uf_check.changed
+      failed_when: false
+
+    - name: Install UF package
+      ansible.builtin.apt:
+        deb: "/tmp/{{ uf_package }}"
+      register: uf_install
+      notify: Restart forwarder
+
+    - name: Accept license after install or upgrade
+      ansible.builtin.command:
+        cmd: "{{ uf_home }}/bin/splunk version --accept-license --answer-yes --no-prompt"
+      become_user: splunkfwd
+      when: uf_install.changed
+
+    - name: Let splunkfwd read logs in /var/log
+      ansible.builtin.user:
+        name: splunkfwd
+        groups: adm
+        append: true
+      notify: Restart forwarder
+
+    - name: Deploy outputs.conf
+      ansible.builtin.template:
+        src: outputs.conf.j2
+        dest: "{{ uf_home }}/etc/system/local/outputs.conf"
+        owner: splunkfwd
+        group: splunkfwd
+        mode: "0600"
+      notify: Restart forwarder
+
+    - name: Deploy inputs.conf
+      ansible.builtin.template:
+        src: inputs.conf.j2
+        dest: "{{ uf_home }}/etc/system/local/inputs.conf"
+        owner: splunkfwd
+        group: splunkfwd
+        mode: "0600"
+      notify: Restart forwarder
+
+    - name: Enable boot-start (first run only)
+      ansible.builtin.command:
+        cmd: >
+          {{ uf_home }}/bin/splunk enable boot-start
+          -systemd-managed 1 -user splunkfwd
+          --accept-license --answer-yes --no-prompt
+        creates: /etc/systemd/system/SplunkForwarder.service
+
+    - name: Make sure the forwarder is running
+      ansible.builtin.systemd:
+        name: SplunkForwarder
+        state: started
+
+  handlers:
+    - name: Restart forwarder
+      ansible.builtin.systemd:
+        name: SplunkForwarder
+        state: restarted
