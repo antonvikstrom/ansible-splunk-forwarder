@@ -21,7 +21,7 @@
       check_mode: true
       register: uf_check
 
-    - name: Stop the forwarder before an upgrade
+    - name: Stop the forwarder before an upgrade # noqa: no-handler (must run before install, handlers run too late)
       ansible.builtin.systemd:
         name: SplunkForwarder
         state: stopped
@@ -34,11 +34,12 @@
       register: uf_install
       notify: Restart forwarder
 
-    - name: Accept license after install or upgrade
+    - name: Accept license after install or upgrade # noqa: no-handler (must run before the service starts)
       ansible.builtin.command:
         cmd: "{{ uf_home }}/bin/splunk version --accept-license --answer-yes --no-prompt"
       become_user: splunkfwd
       when: uf_install.changed
+      changed_when: true
 
     - name: Let splunkfwd read logs in /var/log
       ansible.builtin.user:
