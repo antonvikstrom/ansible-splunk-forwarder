@@ -37,6 +37,7 @@
     - name: Accept license after install or upgrade # noqa: no-handler (must run before the service starts)
       ansible.builtin.command:
         cmd: "{{ uf_home }}/bin/splunk version --accept-license --answer-yes --no-prompt"
+      become: true
       become_user: splunkfwd
       when: uf_install.changed
       changed_when: true
