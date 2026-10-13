@@ -42,7 +42,7 @@ ansible-playbook install_uf.yml --ask-vault-pass
 ## Problems I ran into
 
 - **sudo-rs.** Newer Ubuntu uses sudo-rs, and Ansible timed out waiting for a sudo prompt it didn't recognize. Classic sudo is still installed as `sudo.ws`, so I set `become_exe = sudo.ws` in `ansible.cfg`.
-- **Wrong documentation.** My notes said the client was `linux-client01` at 10.1.3.150. The first connection test showed it was really `nix-client01` at 10.1.3.101. I fixed the notes, not the machine. Keeping the inventory in code helps prevent this.
+- **Wrong documentation.** My notes said the client was `linux-client01` at 10.1.3.150. The first connection test showed it was really `nix-client01` at 10.1.3.101. I fixed the notes, not the machine. The inventory file is now where machine names and IPs live. Ansible uses it on every run, so if it's wrong, I find out right away, unlike a table in my notes.
 - **The forwarder stopped after an upgrade.** The new version waited for license acceptance and never started, so no data arrived. Searching with `_index_earliest` (arrival time) instead of `earliest` showed it right away, since old syslog lines keep their old timestamps.
 - **The upgrade failed on a clean snapshot.** Splunk will not migrate while it is running. The playbook now does a dry run of the install, stops the forwarder only if an upgrade is needed, and accepts the license before starting it again. These tasks must run before handlers would, so they have a `noqa` comment explaining why.
 - **Local lint passed, CI failed.** Ubuntu's ansible-lint was older than the one in GitHub Actions and missed the `partial-become` rule. CI is the version that counts.
